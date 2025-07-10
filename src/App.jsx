@@ -1,31 +1,41 @@
 import React, { useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable"; // ✅ proper ESM usage for Vite + React
-import { Home } from "lucide-react";
+import { Home, LogOut } from "lucide-react";
 import backgroundImage from "./assets/background.jpg"; // make sure the image is placed in src/assets
 import watermarkImage from "./assets/watermark.png"; // Add a transparent watermark image here
+import Login from "./Login";
 
-function Header() {
+function Header({ onLogout }) {
   return (
     <div className="fixed top-0 left-0 w-full bg-white/30 backdrop-blur-sm shadow-md p-4 flex justify-between items-center z-50">
       <h1 className="text-lg font-bold text-gray-800">The Hahnemann</h1>
-      <Link to="/">
-        <button className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 flex items-center">
-          <Home className="w-5 h-5" />
+      <div className="flex gap-2 items-center">
+        <Link to="/">
+          <button className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 flex items-center">
+            <Home className="w-5 h-5" />
+          </button>
+        </Link>
+        <button
+          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 ml-2 flex items-center justify-center"
+          onClick={onLogout}
+          title="Logout"
+        >
+          <LogOut className="w-5 h-5" />
         </button>
-      </Link>
+      </div>
     </div>
   );
 }
 
-function Dashboard() {
+function Dashboard({ onLogout }) {
   return (
     <div
       className="w-screen h-screen pt-20 flex flex-col items-center justify-center px-4"
       style={{ backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
     >
-      <Header />
+      <Header onLogout={onLogout} />
       <div className="max-w-xl w-full bg-white/80 backdrop-blur-md p-6 rounded-xl shadow">
         <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
           The Hahnemann Dashboard
@@ -47,7 +57,7 @@ function Dashboard() {
   );
 }
 
-function Inventory() {
+function Inventory({ onLogout }) {
   const [inventory, setInventory] = useState([]);
   const [item, setItem] = useState({ name: '', quantity: '', price: '' });
 
@@ -66,7 +76,7 @@ function Inventory() {
       className="w-screen h-screen pt-20 flex flex-col items-center px-4 py-8"
       style={{ backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
     >
-      <Header />
+      <Header onLogout={onLogout} />
       <div className="max-w-3xl w-full bg-white/80 backdrop-blur-md p-6 rounded-xl shadow">
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Manage Inventory</h2>
 
@@ -119,7 +129,7 @@ function Inventory() {
   );
 }
 
-function Billing() {
+function Billing({ onLogout }) {
   const [items, setItems] = useState([{ name: "", quantity: "", price: "", discount: "" }]);
 
   const handleChange = (index, field, value) => {
@@ -179,7 +189,7 @@ function Billing() {
       className="w-screen h-screen pt-20 flex flex-col items-center px-4 py-8"
       style={{ backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
     >
-      <Header />
+      <Header onLogout={onLogout} />
       <div className="max-w-3xl w-full bg-white/80 backdrop-blur-md p-6 rounded-xl shadow">
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Create Invoice</h2>
 
@@ -225,15 +235,36 @@ function Billing() {
   );
 }
 
+function AppRoutes({ isAuthenticated, handleLogin, handleLogout }) {
+  return isAuthenticated ? (
+    <Routes>
+      <Route path="/" element={<Dashboard onLogout={handleLogout} />} />
+      <Route path="/billing" element={<Billing onLogout={handleLogout} />} />
+      <Route path="/inventory" element={<Inventory onLogout={handleLogout} />} />
+    </Routes>
+  ) : (
+    <Routes>
+      <Route path="*" element={<Login onLogin={handleLogin} />} />
+    </Routes>
+  );
+}
+
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+    navigate("/");
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    navigate("/login");
+  };
+
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/billing" element={<Billing />} />
-        <Route path="/inventory" element={<Inventory />} />
-      </Routes>
-    </Router>
+    <AppRoutes isAuthenticated={isAuthenticated} handleLogin={handleLogin} handleLogout={handleLogout} />
   );
 }
 
